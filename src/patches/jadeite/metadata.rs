@@ -6,6 +6,7 @@ use crate::version::Version;
 
 #[cfg(feature = "star-rail")]
 use crate::games::star_rail::consts::GameEdition as StarRailGameEdition;
+use crate::games::wuwa::consts::GameEdition as WuwaGameEdition;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct JadeiteMetadata {
@@ -57,7 +58,8 @@ impl From<&JsonValue> for JadeitePatchMetadata {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct JadeiteGamesMetadata {
     pub hi3rd: JadeiteHi3rdMetadata,
-    pub hsr: JadeiteHsrMetadata
+    pub hsr: JadeiteHsrMetadata,
+    pub wuwa: JadeiteWuwaMetadata
 }
 
 impl From<&JsonValue> for JadeiteGamesMetadata {
@@ -69,6 +71,10 @@ impl From<&JsonValue> for JadeiteGamesMetadata {
 
             hsr: value.get("hsr")
                 .map(JadeiteHsrMetadata::from)
+                .unwrap_or_default(),
+
+            wuwa: value.get("wuwa")
+                .map(JadeiteWuwaMetadata::from)
                 .unwrap_or_default()
         }
     }
@@ -130,6 +136,36 @@ impl From<&JsonValue> for JadeiteHsrMetadata {
             china: value.get("china")
                 .map(JadeitePatchStatus::from)
                 .unwrap_or_default()
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub struct JadeiteWuwaMetadata {
+    pub global: JadeitePatchStatus,
+    pub china: JadeitePatchStatus
+}
+
+impl From<&JsonValue> for JadeiteWuwaMetadata {
+    fn from(value: &JsonValue) -> Self {
+        Self {
+            global: value.get("global")
+                .map(JadeitePatchStatus::from)
+                .unwrap_or_default(),
+
+            china: value.get("china")
+                .map(JadeitePatchStatus::from)
+                .unwrap_or_default()
+        }
+    }
+}
+
+#[cfg(feature = "wuwa")]
+impl JadeiteWuwaMetadata {
+    pub fn for_edition(&self, edition: WuwaGameEdition) -> JadeitePatchStatus {
+        match edition {
+            WuwaGameEdition::Global => self.global,
+            WuwaGameEdition::China => self.china
         }
     }
 }
@@ -215,31 +251,31 @@ impl JadeitePatchStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum JadeitePatchStatusVariant {
     /// Patch is verified and works fine
-    /// 
+    ///
     /// Value: `verified`
     Verified,
 
     /// Patch is not verified to be working
-    /// 
+    ///
     /// Value: `unverified`
     Unverified,
 
     /// Patch doesn't work
-    /// 
+    ///
     /// Value: `broken`
     Broken,
 
     /// Patch is working but unsafe for use
-    /// 
+    ///
     /// You can't run the game with this status
-    /// 
+    ///
     /// Value: `unsafe`
     Unsafe,
 
     /// Patch is working but we have some concerns about it
-    /// 
+    ///
     /// You still can run the game with this status
-    /// 
+    ///
     /// Value: `concerning`
     Concerning
 }
